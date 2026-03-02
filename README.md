@@ -1,27 +1,47 @@
 # TACC GPU Geospatial Experiment
 
-This repository is for running the RAPIDS geospatial experiment on TACC using GPU resources.
+RAPIDS-based, container-first spatio-temporal benchmark harness for TACC GPU nodes.
 
 ## Mission Context
-This work supports spatio-temporal querying for dynamic environment updates and policy-learning workflows.
+This workspace benchmarks geospatial query and maintenance workloads that support dynamic environment updates and policy-learning loops.
 
-"Of course dont wish to spoil any weekend plans.... . Its integral, i believe to all our differential Hamiltonian Policy optimization learning, e.g. spatio-temporal querying of the environments by the mobile PIN-radio agent, as well as dynamic updates to the Gym too. Our group is developing PIN agents for dynamic adversarial networking response for the US Army."
+## Path A: Container-First (Apptainer) Quickstart
+1. Stage RAPIDS SIF (one-time, via batch on Vista):
+```bash
+export IMAGE_PATH=/scratch/11039/logankronforst/containers/rapids.sif
+mkdir -p /scratch/11039/logankronforst/containers jobs/logs
+sbatch --partition=gh-dev --export=ALL,IMAGE_PATH jobs/pull_rapids_image.sbatch
+```
+2. Export your benchmark parameters:
+```bash
+export SLURM_ACCOUNT=
+export IMAGE_PATH=/scratch/$USER/containers/rapids.sif
+export OUTPUT_ROOT=/scratch/$USER/tacc-gpu-geospatial
+export POINTS=200000
+export REPEATS=3
+export SCENARIOS=temporal,bbox,maintenance,polygon_like
+export BATCH_SIZE=50000
+export MAINTENANCE_WINDOW=3600
+export SLURM_PARTITION=gh
+export VALIDATE_IMAGE=1
+# Optional dataset path (parquet/csv with x,y,ts columns)
+export DATA_PATH=
+```
+3. Submit the benchmark:
+```bash
+bash jobs/submit_spatial_benchmark.sh
+```
+This now submits `jobs/validate_rapids_image.sbatch` first and runs the benchmark only if validation succeeds (`afterok` dependency).
+4. Artifacts are written under:
+`$OUTPUT_ROOT/results/<timestamp>/`
 
-## Feasibility on TACC
-Status: High feasibility on standard GPU allocations.
-
-## Hard Requirements
-1. TACC GPU allocation (A100/H100 class preferred).
-2. RAPIDS-compatible software stack (container or conda env).
-3. CUDA driver/runtime compatibility for the chosen RAPIDS version.
-4. Input datasets staged to TACC storage (`$SCRATCH` or project storage).
-5. Batch or interactive job workflow (`sbatch` or equivalent).
-
-## Deliverables
-1. Reproducible environment setup (`env/` or container reference).
-2. Job scripts for TACC (`jobs/`).
-3. Query notebooks/scripts for spatial filtering and indexing (`src/`).
-4. Runtime/performance notes (`docs/notes.md`).
+## Repository Outputs
+- `jobs/spatial_benchmark.sbatch`: batch benchmark job with GPU telemetry capture.
+- `jobs/submit_spatial_benchmark.sh`: submission wrapper with exported parameters.
+- `src/spatial_benchmark.py`: executable spatio-temporal benchmark workflow.
+- `docs/hack.md`: benchmark runbook, dependency and constraint notes, scenario definitions.
+- `docs/results_summary.md`: experiment logging template.
+- `docs/notes.md`: concise runtime notes scaffold.
 
 ## Handoff
 See `AGENTS.md` and `skills/tacc-agent-handoff/SKILL.md`.
