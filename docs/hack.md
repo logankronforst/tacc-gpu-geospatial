@@ -48,7 +48,7 @@ Reproduce and benchmark GPU-accelerated spatio-temporal query and maintenance wo
 - `604239` (`geo-bench`) : `PENDING (DependencyNeverSatisfied)` on `gh` (dependency on failed `604238`)
 - Historical/one-off queue artifacts are no longer active: `604346`, `604342`, `604345`.
 
-### Run Log Template
+## Run Log
 
 | Date | Job IDs | Image tag | Validation | Benchmark | Outputs produced | Queue blockers | Notes |
 |---|---|---|---|---|---|---|
@@ -56,6 +56,15 @@ Reproduce and benchmark GPU-accelerated spatio-temporal query and maintenance wo
 | 2026-03-02 | 604471 | `rapidsai/rapidsai:23.08a-cuda11.8.0-py3.10` | N/A | Failed | No outputs | `RandomState.random` incompatibility in cupy | Fixed in `src/spatial_benchmark.py` (use `rng.rand`) |
 | 2026-03-02 | 604507 | `rapidsai/rapidsai:23.08a-cuda11.8.0-py3.10` | Not required | Completed | `benchmark_results.csv`, `summary.json`, `gpu_metrics.csv` in `results/20260302_122356` | none | Exit `0:0`, elapsed `00:00:16`, node `c639-021` |
 | 2026-03-02 | 604513 | `rapidsai/rapidsai:23.08a-cuda11.8.0-py3.10` | Not required | Completed | `benchmark_results.csv`, `summary.json`, `gpu_metrics.csv` in `results/20260302_122357` | none | Exit `0:0`, elapsed `00:00:16`, node `c640-032` |
+
+## Authoritative Results (single source of truth)
+
+| Run | Status | Run artifacts | Summary |
+|---|---|---|---|
+| `20260302_122356` | Success | `benchmark_results.csv`, `summary.json`, `gpu_metrics.csv` | 36 rows (15 temporal, 9 bbox_full_time, 3 maintenance, 9 polygon_like), `rows_out=722,815` |
+| `20260302_122357` | Success | `benchmark_results.csv`, `summary.json`, `gpu_metrics.csv` | 36 rows (15 temporal, 9 bbox_full_time, 3 maintenance, 9 polygon_like), `rows_out=722,815` |
+
+Detailed canonical run summary: [results_summary.md](results_summary.md)
 
 ## Environment Strategy (Path A)
 - Runtime: `Apptainer --nv` with pre-staged RAPIDS SIF.
