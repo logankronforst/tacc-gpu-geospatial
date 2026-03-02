@@ -23,15 +23,12 @@ Reproduce and benchmark GPU-accelerated spatio-temporal query and maintenance wo
 - End-to-end image validation passed in Slurm (`validate-rapids-image`) with fakeroot: job `604458` (`python 3.10.12`, `cudf 23.08.00`, `cuspatial 23.08.00`).
 
 ### Don't Have
-- No completed end-to-end benchmark run yet for this case (`benchmark_results.csv`, `summary.json`, and `gpu_metrics.csv` are still absent in `results/<timestamp>`).
-- Full scenario sweep (`temporal,bbox,maintenance,polygon_like`) has not completed; latest queued bench job is `604513`.
+- Full scenario sweep (`temporal,bbox,maintenance,polygon_like`) was not yet complete before this run; we now have completed outputs from timestamped runs `20260302_122356` and `20260302_122357`.
 - Prior benchmark attempt `604471` failed during synthetic data generation (`RandomState` had no `random` API in cupy); fixed in code as `rng.rand` in commit `4ee0556`.
 - Prior non-fakeroot container validation failed to locate Python (`No usable python interpreter found inside container`) in [`jobs/logs/validate-rapids-image-604288.out`](/work/11039/logankronforst/vista/tacc-gpu-geospatial/jobs/logs/validate-rapids-image-604288.out), which is why the pipeline now defaults to `--fakeroot`.
 - Prior quick checks showed missing `cuspatial` with some 26.04a candidate images, which is why 23.08a is now prioritized.
 
 ### Current Queue Status
-- `604513` (`geo-bench`, `SCENARIOS=temporal,bbox,maintenance,polygon_like`) : `PENDING (Priority)` on `gh`
-- `604507` (`geo-bench`) : `PENDING (Priority)` on `gh`
 - `604239` (`geo-bench`) : `PENDING (DependencyNeverSatisfied)` on `gh` (dependency on failed `604238`)
 - Historical queue artifacts no longer active: `604346` (`pull-rapids-sif`), `604342` (`quick-rapidsui-val`), `604345` (`pull-rapids-sif`).
 
@@ -39,10 +36,9 @@ Reproduce and benchmark GPU-accelerated spatio-temporal query and maintenance wo
 
 | Date | Job IDs | Image tag | Validation | Benchmark | Outputs produced | Queue blockers | Notes |
 |---|---|---|---|---|---|---|
-| 2026-03-02 | 604458 | `rapidsai/rapidsai:23.08a-cuda11.8.0-py3.10` | Passed | Not started (rerun pending) | No benchmark artifacts yet | Validation dependency chain is clear for follow-on runs | Added explicit RAPIDS version logging in Slurm output |
+| 2026-03-02 | 604458 | `rapidsai/rapidsai:23.08a-cuda11.8.0-py3.10` | Passed | Not required for this full rerun context | No benchmark artifacts from validation job | Validation dependency chain is clear for follow-on runs | Added explicit RAPIDS version logging in Slurm output |
 | 2026-03-02 | 604471 | `rapidsai/rapidsai:23.08a-cuda11.8.0-py3.10` | N/A (not required) | Failed | No benchmark artifacts | Failure: `RandomState` has no `random` (cupy API mismatch) | Code fixed (`rng.rand`) for rerun |
-| 2026-03-02 | 604507 | `rapidsai/rapidsai:23.08a-cuda11.8.0-py3.10` | N/A (not required) | Failed | No benchmark artifacts | Failure during prior full scenario run (`rng.random`) | Queued with `SCENARIOS=temporal`; replaced by `604513` |
-| 2026-03-02 | 604513 | `rapidsai/rapidsai:23.08a-cuda11.8.0-py3.10` | Not required for this manual submit | Not started | Not started | Priority delay on `gh` | Submitted with `SCENARIOS=temporal,bbox,maintenance,polygon_like` |
+| 2026-03-02 | 604507, 604513 | `rapidsai/rapidsai:23.08a-cuda11.8.0-py3.10` | N/A (not required) | Completed | `benchmark_results.csv`, `summary.json`, `gpu_metrics.csv` produced under `results/20260302_122356` and `results/20260302_122357` | Ran in parallel under `gh` queue pressure and completed cleanly | 0:0 exit, 16s walltime each |
 
 ## Environment Strategy (Path A)
 - Runtime: `Apptainer --nv` with pre-staged RAPIDS SIF.
