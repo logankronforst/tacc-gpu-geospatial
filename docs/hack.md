@@ -1,7 +1,7 @@
 # HACK: TACC RAPIDS Spatio-Temporal Benchmark
 
 ## Objective
-Reproduce and benchmark GPU-accelerated spatio-temporal query and maintenance workflows on TACC using a script-first, containerized setup.
+Reproduce and benchmark GPU-accelerated spatio-temporal query and maintenance workflows on TACC using a reproducible, containerized setup.
 
 ## Setup Snapshot
 
@@ -12,40 +12,57 @@ Reproduce and benchmark GPU-accelerated spatio-temporal query and maintenance wo
 | Image pull job | `602474` (`gh-dev`) |
 | SIF path | `/scratch/11039/logankronforst/containers/rapids.sif` |
 | Pulled image tag | `rapidsai/rapidsai:23.08a-cuda11.8.0-py3.10` |
-| Benchmark submission at snapshot | `602502` (`gh`) |
+| Staged container | present and readable |
 
 ## Status Snapshot (March 2, 2026)
 
-### Have
-- Working image candidate identified: `rapidsai/rapidsai:23.08a-cuda11.8.0-py3.10`.
-- `cuspatial` import validated in a direct image probe: `cudf=True`, `cuspatial=True` in [`jobs/logs/test-tag-604303.out`](/work/11039/logankronforst/vista/tacc-gpu-geospatial/jobs/logs/test-tag-604303.out).
-- Existing staged SIF is present at `/scratch/11039/logankronforst/containers/rapids.sif` and readable on the login filesystem.
-- End-to-end image validation passed in Slurm (`validate-rapids-image`) with fakeroot: job `604458` (`python 3.10.12`, `cudf 23.08.00`, `cuspatial 23.08.00`).
+### What Works
+- End-to-end image validation passes on login policy-compliant GPU job (`validate-rapids-image`, job `604458`).
+  - RAPIDS versions: `python 3.10.12`, `cudf 23.08.00`, `cuspatial 23.08.00`.
+- Full benchmark sweep executed successfully with full scenarios (`temporal`, `bbox`, `maintenance`, `polygon_like`) on two parallel Slurm jobs.
+  - `604507` -> completed successfully on `c639-021` in `00:00:16`
+  - `604513` -> completed successfully on `c640-032` in `00:00:16`
+- Both completed jobs produced all expected artifacts under:
+  - `/scratch/11039/logankronforst/tacc-gpu-geospatial/results/20260302_122356/`
+  - `/scratch/11039/logankronforst/tacc-gpu-geospatial/results/20260302_122357/`
+- Successful outputs per run:
+  - `benchmark_results.csv`
+  - `summary.json`
+  - `gpu_metrics.csv`
+- Representative aggregate metrics (successful run `20260302_122357`):
+  - `elapsed_ms_mean`: `2.5244453715`
+  - `gpu_util_post_mean`: `0.8611111111`
+  - `max_mem_used_mb_post`: `583`
+  - `rows_out`: `722,815`
+- GPU context is visible and correctly bound in logs via `nvidia-smi`.
 
-### Don't Have
-- Full scenario sweep (`temporal,bbox,maintenance,polygon_like`) was not yet complete before this run; we now have completed outputs from timestamped runs `20260302_122356` and `20260302_122357`.
-- Prior benchmark attempt `604471` failed during synthetic data generation (`RandomState` had no `random` API in cupy); fixed in code as `rng.rand` in commit `4ee0556`.
-- Prior non-fakeroot container validation failed to locate Python (`No usable python interpreter found inside container`) in [`jobs/logs/validate-rapids-image-604288.out`](/work/11039/logankronforst/vista/tacc-gpu-geospatial/jobs/logs/validate-rapids-image-604288.out), which is why the pipeline now defaults to `--fakeroot`.
-- Prior quick checks showed missing `cuspatial` with some 26.04a candidate images, which is why 23.08a is now prioritized.
+### Failures and Fixes
+- Failure: `validate-rapids-image` non-fakeroot path could not find a usable Python in early runs.
+  - Fix: defaulted benchmark/validation jobs to `--fakeroot` and explicit Python candidate probing.
+- Failure: initial `604471` run crashed with `AttributeError: 'RandomState' object has no attribute 'random'`.
+  - Fix: updated synthetic payload generation from `rng.random(...)` to `rng.rand(...).astype(cp.float32)` in `src/spatial_benchmark.py` (commit `4ee0556`).
+- Failure: earlier candidate images with quick checks showed missing `cuspatial`.
+  - Fix: switched image preference to `23.08a-cuda11.8.0-py3.10`.
 
 ### Current Queue Status
 - `604239` (`geo-bench`) : `PENDING (DependencyNeverSatisfied)` on `gh` (dependency on failed `604238`)
-- Historical queue artifacts no longer active: `604346` (`pull-rapids-sif`), `604342` (`quick-rapidsui-val`), `604345` (`pull-rapids-sif`).
+- Historical/one-off queue artifacts are no longer active: `604346`, `604342`, `604345`.
 
-## Run Log Template
+### Run Log Template
 
 | Date | Job IDs | Image tag | Validation | Benchmark | Outputs produced | Queue blockers | Notes |
 |---|---|---|---|---|---|---|
-| 2026-03-02 | 604458 | `rapidsai/rapidsai:23.08a-cuda11.8.0-py3.10` | Passed | Not required for this full rerun context | No benchmark artifacts from validation job | Validation dependency chain is clear for follow-on runs | Added explicit RAPIDS version logging in Slurm output |
-| 2026-03-02 | 604471 | `rapidsai/rapidsai:23.08a-cuda11.8.0-py3.10` | N/A (not required) | Failed | No benchmark artifacts | Failure: `RandomState` has no `random` (cupy API mismatch) | Code fixed (`rng.rand`) for rerun |
-| 2026-03-02 | 604507, 604513 | `rapidsai/rapidsai:23.08a-cuda11.8.0-py3.10` | N/A (not required) | Completed | `benchmark_results.csv`, `summary.json`, `gpu_metrics.csv` produced under `results/20260302_122356` and `results/20260302_122357` | Ran in parallel under `gh` queue pressure and completed cleanly | 0:0 exit, 16s walltime each |
+| 2026-03-02 | 604458 | `rapidsai/rapidsai:23.08a-cuda11.8.0-py3.10` | Passed | Not benchmarked in this job | `RAPIDS` validated and ready for benchmark chain | none | Verified python/cudf/cuspatial import in Slurm context |
+| 2026-03-02 | 604471 | `rapidsai/rapidsai:23.08a-cuda11.8.0-py3.10` | N/A | Failed | No outputs | `RandomState.random` incompatibility in cupy | Fixed in `src/spatial_benchmark.py` (use `rng.rand`) |
+| 2026-03-02 | 604507 | `rapidsai/rapidsai:23.08a-cuda11.8.0-py3.10` | Not required | Completed | `benchmark_results.csv`, `summary.json`, `gpu_metrics.csv` in `results/20260302_122356` | none | Exit `0:0`, elapsed `00:00:16`, node `c639-021` |
+| 2026-03-02 | 604513 | `rapidsai/rapidsai:23.08a-cuda11.8.0-py3.10` | Not required | Completed | `benchmark_results.csv`, `summary.json`, `gpu_metrics.csv` in `results/20260302_122357` | none | Exit `0:0`, elapsed `00:00:16`, node `c640-032` |
 
 ## Environment Strategy (Path A)
 - Runtime: `Apptainer --nv` with pre-staged RAPIDS SIF.
-- Rationale: strongest reproducibility and lower CUDA/Python mismatch risk on shared HPC.
-- Compute nodes: assume no internet dependency.
-- Login nodes: may be used for staging only.
-- Vista policy: do not run Apptainer container runtime on login nodes; pull/validate/run through Slurm on GPU nodes.
+- Rationale: reproducibility and lower CUDA/Python mismatch risk on shared HPC.
+- Compute nodes: no internet dependency.
+- Login nodes: staging only.
+- Vista policy: do not run Apptainer container runtime on login nodes; pull/validate/run through Slurm GPU jobs.
 
 ## Software Dependencies
 - `Slurm` (`sbatch`, `scontrol`)
@@ -56,8 +73,6 @@ Reproduce and benchmark GPU-accelerated spatio-temporal query and maintenance wo
   - `cuspatial`
   - `cupy`
   - Python 3.x compatible with selected RAPIDS build
-- Runtime note: on current cluster images, `/opt/conda` may only be accessible via `apptainer --fakeroot`.
-  Validation and benchmark jobs are configured to use `--fakeroot` by default.
 
 ## Constraints and Compatibility
 - RAPIDS build must match node CUDA driver/runtime compatibility.
@@ -125,8 +140,8 @@ export REPEATS=3
 export SCENARIOS=temporal,bbox,maintenance,polygon_like
 export BATCH_SIZE=50000
 export MAINTENANCE_WINDOW=3600
+export SEED=42
 export SLURM_PARTITION=gh
-export VALIDATE_IMAGE=1
 export USE_FAKEROOT=1
 
 # Optional external dataset path:
@@ -145,16 +160,14 @@ bash jobs/submit_spatial_benchmark.sh
 
 ## Validation Checklist
 - GPU is visible in job logs (`nvidia-smi`).
-- RAPIDS imports succeed (`cudf`, `cuspatial` visible in logs).
+- RAPIDS imports succeed (`cudf`, `cuspatial`) in logs.
 - End-to-end run produces non-empty:
   - `benchmark_results.csv`
   - `summary.json`
-- Runtime and memory footprint are summarized in:
-  - `docs/results_summary.md`
-  - `docs/notes.md`
+  - `gpu_metrics.csv`
 
 ## Job Patch Checklist (When Retuning Runs)
 - Confirm `SLURM_PARTITION` and optional `SLURM_ACCOUNT` are correct for current allocation.
 - Confirm `IMAGE_PATH` exists and is readable from compute nodes.
-- Confirm validation dependency is enabled (`VALIDATE_IMAGE=1`) before benchmark submit.
-- Tune `POINTS`, `BATCH_SIZE`, `REPEATS`, `MAINTENANCE_WINDOW` based on utilization guidance above.
+- Confirm validation dependency behavior before benchmark submit (if using manual chain).
+- Tune `POINTS`, `BATCH_SIZE`, `REPEATS`, `MAINTENANCE_WINDOW` based on utilization guidance.
