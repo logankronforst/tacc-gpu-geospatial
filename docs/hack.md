@@ -1,101 +1,94 @@
 # HACK: TACC RAPIDS Spatio-Temporal Benchmark
 
 ## Objective
-Reproduce and benchmark GPU-accelerated spatio-temporal query and maintenance workflows on TACC with a script-first, containerized setup.
+Reproduce and benchmark GPU-accelerated spatio-temporal query and maintenance workflows on TACC using a script-first, containerized setup.
 
-## Validated Setup Snapshot
-- Date: 2026-03-01
-- Cluster: Vista
-- Successful image pull job: `602474` on partition `gh-dev`
-- Resolved image path: `/scratch/11039/logankronforst/containers/rapids.sif`
-- Pulled tag: `rapidsai/base:26.02-cuda12-py3.11`
-- Active benchmark submission: `602502` on partition `gh` (pending by scheduler priority at last check).
+## Setup Snapshot
+
+| Item | Value |
+|---|---|
+| Date | `2026-03-01` |
+| Cluster | `Vista` |
+| Image pull job | `602474` (`gh-dev`) |
+| SIF path | `/scratch/11039/logankronforst/containers/rapids.sif` |
+| Pulled image tag | `rapidsai/base:26.02-cuda12-py3.11` |
+| Benchmark submission at snapshot | `602502` (`gh`) |
 
 ## Environment Strategy (Path A)
-- Runtime mode: `Apptainer` (`--nv`) with a pre-staged RAPIDS SIF image.
-- Why Path A: strongest reproducibility and lower CUDA/Python mismatch risk on shared HPC systems.
-- Compute-node assumption: no internet dependency.
-- Login-node assumption: internet may be used only for image staging.
-- Site policy note: Vista does not allow Apptainer runtime on login nodes. Pull/build must run via batch or interactive compute allocation.
+- Runtime: `Apptainer --nv` with pre-staged RAPIDS SIF.
+- Rationale: strongest reproducibility and lower CUDA/Python mismatch risk on shared HPC.
+- Compute nodes: assume no internet dependency.
+- Login nodes: may be used for staging only.
+- Vista policy: do not run Apptainer container runtime on login nodes; pull/validate/run through Slurm on GPU nodes.
 
 ## Software Dependencies
-- `Slurm` for job scheduling (`sbatch`, `scontrol`).
-- `Apptainer` or `apptainer-suid`.
-- NVIDIA GPU drivers available on compute nodes.
-- RAPIDS stack inside the image:
-- `cudf`
-- `cuspatial`
-- `cupy`
-- Python 3.x compatible with selected RAPIDS build.
+- `Slurm` (`sbatch`, `scontrol`)
+- `Apptainer` or `apptainer-suid`
+- NVIDIA GPU driver stack on compute nodes
+- RAPIDS userland in container image:
+  - `cudf`
+  - `cuspatial`
+  - `cupy`
+  - Python 3.x compatible with selected RAPIDS build
 
-## Constraints and Compatibility Notes
-- RAPIDS and CUDA must be compatible with node driver/runtime.
-- Image must be pre-staged to storage visible from compute node, typically:
-- `/scratch/$USER/containers/rapids.sif`
+## Constraints and Compatibility
+- RAPIDS build must match node CUDA driver/runtime compatibility.
+- SIF must be on storage visible to compute nodes (`/scratch/$USER/containers/rapids.sif` recommended).
 - Input data should be staged to TACC storage (`$SCRATCH` or project storage).
-- Workload sizing must match allocation limits (GPU memory and wall time).
+- Workload size must fit allocation limits (GPU memory + walltime).
 
 ## Benchmark Scenarios
-`src/spatial_benchmark.py` implements:
-1. `temporal`
-- Windowed temporal filtering at several interval sizes.
-2. `bbox`
-- Spatial bounding-box + full time range.
-3. `maintenance`
-- Incremental ingest + rolling temporal window + fixed ROI query.
-4. `polygon_like`
-- Strict regional filters approximating multi-region polygon-like constraints.
+Implemented in `src/spatial_benchmark.py`:
+
+| Scenario | Description |
+|---|---|
+| `temporal` | Windowed temporal filtering at multiple interval sizes |
+| `bbox` | Spatial bounding-box filtering over full time range |
+| `maintenance` | Incremental ingest + rolling temporal window + fixed ROI query |
+| `polygon_like` | Strict regional filters approximating multi-region polygon-like constraints |
 
 ## Metrics Captured
-- Scenario-level timings (`elapsed_ms`).
-- Throughput (`throughput_rows_per_s`).
-- Result cardinality (`result_rows`, `active_rows` where applicable).
-- GPU snapshot metrics around each run:
-- `gpu_util_pre`, `gpu_util_post`
-- `mem_used_mb_pre`, `mem_used_mb_post`, `mem_total_mb`
-- Job-level GPU telemetry sampled every 5s:
-- `gpu_metrics.csv` from `nvidia-smi`.
+- Scenario runtime: `elapsed_ms`
+- Throughput: `throughput_rows_per_s`
+- Cardinality: `result_rows`, `active_rows` (where applicable)
+- Per-run GPU snapshots:
+  - `gpu_util_pre`, `gpu_util_post`
+  - `mem_used_mb_pre`, `mem_used_mb_post`, `mem_total_mb`
+- Job telemetry sampled every 5 seconds:
+  - `gpu_metrics.csv` from `nvidia-smi`
 
-## GPU Utilization Guidance (Avoid Under/Over Allocation)
-Use these guardrails when reviewing `summary.json` and `gpu_metrics.csv`:
-1. Under-utilization indicators:
-- `gpu_util_post_mean < 30%` for most runs.
-- Peak `mem_used_mb_post < 30%` of `mem_total_mb`.
-- Action: increase `POINTS`, `BATCH_SIZE`, or combine scenarios in one job.
-2. Balanced utilization target:
-- `gpu_util_post_mean` roughly `50-85%`.
-- Peak memory between `50-85%` of GPU memory.
-- Action: keep current sizing and increase repeat count for statistical stability.
-3. Over-utilization indicators:
-- Frequent OOM or near-OOM (`>90%` memory sustained).
-- Severe runtime volatility across repeats.
-- Action: reduce `POINTS` or `BATCH_SIZE`, or request larger-memory GPU.
+## GPU Utilization Guidance
+Use `summary.json` and `gpu_metrics.csv` to tune allocation/workload balance:
 
-## Node and Allocation Sizing Recommendations
-1. Start point:
-- `--cpus-per-task=12`, `--time=02:00:00`, GPU-capable partition (for example `gh`).
-2. Move up allocation when:
-- Memory is repeatedly near saturation.
-- Queue and runtime budget support larger nodes/longer runs.
-3. Move down allocation when:
-- Benchmarks complete quickly with consistently low utilization.
+| Condition | Indicators | Action |
+|---|---|---|
+| Under-utilized | `gpu_util_post_mean < 30%`; memory peak `< 30%` of total | Increase `POINTS` and/or `BATCH_SIZE`, or combine scenarios per job |
+| Balanced | `gpu_util_post_mean ~ 50-85%`; memory peak `50-85%` | Keep sizing, increase `REPEATS` for better statistical confidence |
+| Over-utilized | Sustained memory near/exceeding `90%`; unstable runtimes | Reduce `POINTS`/`BATCH_SIZE`, or move to larger-memory GPU |
+
+## Allocation Sizing Guidance
+- Starting point: `--cpus-per-task=12`, `--time=02:00:00`, GPU partition such as `gh`.
+- Scale up when memory is consistently near saturation and queue budget allows.
+- Scale down when runs complete quickly with consistently low GPU/memory utilization.
 
 ## Run Procedure
-1. Stage RAPIDS image to scratch (one-time):
+### 1) Stage RAPIDS image (one-time)
 ```bash
 export IMAGE_PATH=/scratch/11039/logankronforst/containers/rapids.sif
 mkdir -p /scratch/11039/logankronforst/containers jobs/logs
-# On Vista, specify partition explicitly. Account is optional if your default is configured.
 sbatch --partition=gh-dev --export=ALL,IMAGE_PATH jobs/pull_rapids_image.sbatch
 ```
-2. Validate image on GPU node (recommended):
+
+### 2) Validate image on GPU node (recommended)
 ```bash
 sbatch --partition=gh --export=ALL,IMAGE_PATH jobs/validate_rapids_image.sbatch
 ```
-3. Export benchmark parameters:
+
+### 3) Set benchmark environment
 ```bash
-# Optional if cluster default project is configured:
+# Optional if cluster default project is already configured:
 export SLURM_ACCOUNT=
+
 export IMAGE_PATH=/scratch/$USER/containers/rapids.sif
 export OUTPUT_ROOT=/scratch/$USER/tacc-gpu-geospatial
 export POINTS=200000
@@ -105,38 +98,33 @@ export BATCH_SIZE=50000
 export MAINTENANCE_WINDOW=3600
 export SLURM_PARTITION=gh
 export VALIDATE_IMAGE=1
-# Optional:
+
+# Optional external dataset path:
 export DATA_PATH=
 ```
-4. Submit:
+
+### 4) Submit benchmark
 ```bash
 bash jobs/submit_spatial_benchmark.sh
 ```
-5. Inspect outputs:
+
+### 5) Review outputs
 - `$OUTPUT_ROOT/results/<timestamp>/benchmark_results.csv`
 - `$OUTPUT_ROOT/results/<timestamp>/summary.json`
 - `$OUTPUT_ROOT/results/<timestamp>/gpu_metrics.csv`
 
 ## Validation Checklist
-1. GPU visibility:
-- `nvidia-smi` appears in job logs.
-2. RAPIDS imports:
-- job logs show successful `cudf` and `cuspatial` import/version print.
-3. End-to-end run:
-- `benchmark_results.csv` and `summary.json` exist and are non-empty.
-4. Runtime and memory footprint:
-- documented in `docs/results_summary.md` and `docs/notes.md`.
+- GPU is visible in job logs (`nvidia-smi`).
+- RAPIDS imports succeed (`cudf`, `cuspatial` visible in logs).
+- End-to-end run produces non-empty:
+  - `benchmark_results.csv`
+  - `summary.json`
+- Runtime and memory footprint are summarized in:
+  - `docs/results_summary.md`
+  - `docs/notes.md`
 
-## Failure Modes and Mitigations
-1. `apptainer` not found:
-- load `apptainer` or `apptainer-suid` module.
-2. Image missing:
- - stage SIF on login node; verify path in `IMAGE_PATH`.
- - on Vista, use `jobs/pull_rapids_image.sbatch` to pull on a compute node.
- - default pull tag sequence currently starts at `rapidsai/base:26.02-cuda12-py3.11`.
-3. Driver/CUDA mismatch:
-- select RAPIDS image matching TACC node driver support.
-4. Out-of-memory:
-- reduce `POINTS`/`BATCH_SIZE`; shorten maintenance window.
-5. Data schema mismatch:
-- ensure dataset has `x`, `y`, `ts` columns or map with `--x-col/--y-col/--ts-col`.
+## Job Patch Checklist (When Retuning Runs)
+- Confirm `SLURM_PARTITION` and optional `SLURM_ACCOUNT` are correct for current allocation.
+- Confirm `IMAGE_PATH` exists and is readable from compute nodes.
+- Confirm validation dependency is enabled (`VALIDATE_IMAGE=1`) before benchmark submit.
+- Tune `POINTS`, `BATCH_SIZE`, `REPEATS`, `MAINTENANCE_WINDOW` based on utilization guidance above.
