@@ -136,7 +136,7 @@ def make_synthetic(n_points: int, seed: int) -> cudf.DataFrame:
             "x": rng.uniform(-180.0, 180.0, n_points).astype(cp.float32),
             "y": rng.uniform(-90.0, 90.0, n_points).astype(cp.float32),
             "ts": rng.randint(0, 86_400 * 30, size=n_points, dtype=cp.int64),
-            "payload": rng.random(n_points, dtype=cp.float32),
+            "payload": rng.rand(n_points).astype(cp.float32),
         }
     )
 
