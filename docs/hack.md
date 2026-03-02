@@ -23,6 +23,20 @@ Reproduce and benchmark GPU-accelerated spatio-temporal query and maintenance wo
 - Critical behavior confirmation: synthetic point generation succeeded using cupy RNG API `cp.random.RandomState(seed).rand(...)`.
 - Gap for reproducibility: `cupy.__version__` was not emitted in historical logs, but cupy import and execution path both succeeded.
 
+## Blocker Ledger (All major blockers addressed)
+
+- `Image selector` (blocking): initial pull attempts across nightly `rapidsai` tags (`26.04a*`, `26.02a*`, `25.12a*`) passed image conversion but did not provide `cuspatial` or used mismatched RAPIDS/Python stacks for this workflow.
+  - Evidence in logs: `quick-pkgcheck` and `quick-rapidsui` checks reported `cuspatial False` for those tags.
+  - Fix: switched to `rapidsai/rapidsai:23.08a-cuda11.8.0-py3.10` and confirmed `cudf 23.08.00` + `cuspatial 23.08.00`.
+- `In-container Python discovery` (blocking): early validation runs in `validate-rapids-image` could not find a usable interpreter (`No usable python interpreter found inside container`).
+  - Fix: `jobs/validate_rapids_image.sbatch` and `jobs/spatial_benchmark.sbatch` now probe a deterministic candidate list and PATH fallback (`/opt/conda/bin`, `/usr/bin`, `/usr/local/bin`, `PATH`, then filesystem search), then print the chosen interpreter.
+- `Python compatibility mode` (blocking): `--fakeroot` was inconsistent across runs.
+  - Fix: both benchmark and validation scripts default to `USE_FAKEROOT=1`; wrapper exports this explicitly.
+- `cuPy API compatibility` (blocking): benchmark crashed with `AttributeError: 'RandomState' object has no attribute 'random'` on the first full run.
+  - Fix: changed synthetic payload call to `cp.random.RandomState(seed).rand(...)` in `src/spatial_benchmark.py`.
+- `Workflow dependency chain` (blocking): queue job `604239` is blocked as `DependencyNeverSatisfied` because the validating precursor job (`604238`) failed.
+  - Fix path: continue by launching independent jobs when needed; maintain dependency checks before chained submit.
+
 ## Status Snapshot (March 2, 2026)
 
 ### What Works
