@@ -14,6 +14,15 @@ Reproduce and benchmark GPU-accelerated spatio-temporal query and maintenance wo
 | Pulled image tag | `rapidsai/rapidsai:23.08a-cuda11.8.0-py3.10` |
 | Staged container | present and readable |
 
+## Proven Environment
+
+- Python interpreter discovered and used by all successful jobs: `/opt/conda/bin/python` (or `/opt/conda/bin/python3`).
+- Validation output for image (job `604458`): `python` `3.10.12`, `cudf` `23.08.00`, `cuspatial` `23.08.00`.
+- Runtime command path used in passing benchmark jobs: `apptainer exec --nv --fakeroot -B ... "${IMAGE_PATH}" bash -lc`.
+- RAPIDS validation in running jobs includes `import cudf`, `import cuspatial`, `import cupy`.
+- Critical behavior confirmation: synthetic point generation succeeded using cupy RNG API `cp.random.RandomState(seed).rand(...)`.
+- Gap for reproducibility: `cupy.__version__` was not emitted in historical logs, but cupy import and execution path both succeeded.
+
 ## Status Snapshot (March 2, 2026)
 
 ### What Works
@@ -50,19 +59,23 @@ Reproduce and benchmark GPU-accelerated spatio-temporal query and maintenance wo
 
 ## Run Log
 
-| Date | Jobs | Status | Notes |
-|---|---|---|---|
-| 2026-03-02 | `604458` | Validation passed | `validate-rapids-image` job confirmed `python 3.10.12`, `cudf 23.08.00`, `cuspatial 23.08.00` |
-| 2026-03-02 | `604471` | Failed (RNG API) | `RandomState.random` is not available in this cupy version; fixed in source (`rng.rand`) |
-| 2026-03-02 | `604507` | Completed | Artifacts in `results/20260302_122356`, exit `0:0`, runtime `00:00:16`, node `c639-021` |
-| 2026-03-02 | `604513` | Completed | Artifacts in `results/20260302_122357`, exit `0:0`, runtime `00:00:16`, node `c640-032` |
+- `2026-03-02` `604458` - `validate-rapids-image` - `PASSED`; Evidence: `python 3.10.12`, `cudf 23.08.00`, `cuspatial 23.08.00`.
+- `2026-03-02` `604471` - `FAILED`; Error: `AttributeError: 'RandomState' object has no attribute 'random'` (cuPy API mismatch path).
+- `2026-03-02` `604507` - `COMPLETED`; Exit `0:0`, runtime `00:00:16`, node `c639-021`, artifacts `/scratch/11039/logankronforst/tacc-gpu-geospatial/results/20260302_122356`.
+- `2026-03-02` `604513` - `COMPLETED`; Exit `0:0`, runtime `00:00:16`, node `c640-032`, artifacts `/scratch/11039/logankronforst/tacc-gpu-geospatial/results/20260302_122357`.
 
 ## Authoritative Results (single source of truth)
 
-| Run | Status | Artifacts | Key Summary |
-|---|---|---|---|
-| `20260302_122356` | Success | `benchmark_results.csv`, `summary.json`, `gpu_metrics.csv` | `results_count=36`, `rows_out=722,815`, `elapsed_ms_mean=2.444148461`, `gpu_util_post_mean=0.75` |
-| `20260302_122357` | Success | `benchmark_results.csv`, `summary.json`, `gpu_metrics.csv` | `results_count=36`, `rows_out=722,815`, `elapsed_ms_mean=2.5244453715`, `gpu_util_post_mean=0.8611111111` |
+Authoritative results are recorded per timestamp in `results_summary.md` and backed by three artifacts each.
+- `20260302_122356` is the first successful benchmark run: artifacts are `benchmark_results.csv`, `summary.json`, `gpu_metrics.csv` under `/scratch/11039/logankronforst/tacc-gpu-geospatial/results/20260302_122356` with `results_count=36`, `rows_out=722,815`, `elapsed_ms_mean=2.444148461`, `gpu_util_post_mean=0.75`.
+- `20260302_122357` is the second successful benchmark run: artifacts are `benchmark_results.csv`, `summary.json`, `gpu_metrics.csv` under `/scratch/11039/logankronforst/tacc-gpu-geospatial/results/20260302_122357` with `results_count=36`, `rows_out=722,815`, `elapsed_ms_mean=2.5244453715`, `gpu_util_post_mean=0.8611111111`.
+
+### Authoritative Results Matrix (machine-readable)
+
+| Run | Status | rows_out | elapsed_ms_mean | gpu_util_post_mean |
+|---|---|---|---|---|
+| `20260302_122356` | `SUCCESS` | `722,815` | `2.444148461` | `0.75` |
+| `20260302_122357` | `SUCCESS` | `722,815` | `2.5244453715` | `0.8611111111` |
 
 Canonical result reference: [results_summary.md](results_summary.md)
 
@@ -81,7 +94,7 @@ Canonical result reference: [results_summary.md](results_summary.md)
   - `cudf`
   - `cuspatial`
   - `cupy`
-  - Python 3.x compatible with selected RAPIDS build
+  - Python 3.10.12 observed in validation and benchmark context
 
 ## Constraints and Compatibility
 - RAPIDS build must match node CUDA driver/runtime compatibility.
