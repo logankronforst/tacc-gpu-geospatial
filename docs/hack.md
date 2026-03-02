@@ -20,24 +20,27 @@ Reproduce and benchmark GPU-accelerated spatio-temporal query and maintenance wo
 - Working image candidate identified: `rapidsai/rapidsai:23.08a-cuda11.8.0-py3.10`.
 - `cuspatial` import validated in a direct image probe: `cudf=True`, `cuspatial=True` in [`jobs/logs/test-tag-604303.out`](/work/11039/logankronforst/vista/tacc-gpu-geospatial/jobs/logs/test-tag-604303.out).
 - Existing staged SIF is present at `/scratch/11039/logankronforst/containers/rapids.sif` and readable on the login filesystem.
+- End-to-end image validation passed in Slurm (`validate-rapids-image`) with fakeroot: job `604458` (`python 3.10.12`, `cudf 23.08.00`, `cuspatial 23.08.00`).
 
-### Don’t Have
-- No successful end-to-end validation run yet under the final benchmark pipeline.
-- No benchmark results yet for this case (`benchmark_results.csv`, `summary.json`, and `gpu_metrics.csv` remain unproduced in a fresh run).
-- Prior non-fakeroot container validation failed to locate Python (`No usable python interpreter found inside container`) in [`jobs/logs/validate-rapids-image-604288.out`](/work/11039/logankforst/vista/tacc-gpu-geospatial/jobs/logs/validate-rapids-image-604288.out), which is why the pipeline now defaults to `--fakeroot`.
-- Prior quick checks also showed missing `cuspatial` with some 26.04a candidate images, which is why 23.08a is now prioritized.
+### Don't Have
+- No completed end-to-end benchmark run yet for this case (`benchmark_results.csv`, `summary.json`, and `gpu_metrics.csv` are still absent in `results/<timestamp>`).
+- Full scenario sweep (`temporal,bbox,maintenance,polygon_like`) has not completed; latest active bench job `604507` is queued.
+- Prior benchmark attempt `604471` failed during synthetic data generation (`RandomState` had no `random` API in cupy); fixed in code as `rng.rand` in commit `4ee0556`.
+- Prior non-fakeroot container validation failed to locate Python (`No usable python interpreter found inside container`) in [`jobs/logs/validate-rapids-image-604288.out`](/work/11039/logankronforst/vista/tacc-gpu-geospatial/jobs/logs/validate-rapids-image-604288.out), which is why the pipeline now defaults to `--fakeroot`.
+- Prior quick checks showed missing `cuspatial` with some 26.04a candidate images, which is why 23.08a is now prioritized.
 
 ### Current Queue Status
-- `604346` (`pull-rapids-sif`) : `PENDING (Priority)` on `gh`
-- `604342` (`quick-rapidsui-val`) : `PENDING (Priority)` on `gh`
-- `604239` (`geo-bench`) : `PENDING (DependencyNeverSatisfied)` on `gh`
-- `604345` (`pull-rapids-sif`) : `PENDING (Resources)` on `gh-dev`
+- `604507` (`geo-bench`) : `PENDING (Priority)` on `gh`
+- `604239` (`geo-bench`) : `PENDING (DependencyNeverSatisfied)` on `gh` (dependency on failed `604238`)
+- Historical queue artifacts no longer active: `604346` (`pull-rapids-sif`), `604342` (`quick-rapidsui-val`), `604345` (`pull-rapids-sif`).
 
 ## Run Log Template
 
 | Date | Job IDs | Image tag | Validation | Benchmark | Outputs produced | Queue blockers | Notes |
 |---|---|---|---|---|---|---|
-| 2026-03-02 | 604346, 604342, 604239 | `rapidsai/rapidsai:23.08a-cuda11.8.0-py3.10` | Not yet started (jobs pending) | Not started | No new files | `604346`,`604342` pending by priority; `604239` pending on dependency | `/opt/conda` accessibility workaround added (`--fakeroot`) |
+| 2026-03-02 | 604458 | `rapidsai/rapidsai:23.08a-cuda11.8.0-py3.10` | Passed | Not started (rerun pending) | No benchmark artifacts yet | Validation dependency chain is clear for follow-on runs | Added explicit RAPIDS version logging in Slurm output |
+| 2026-03-02 | 604471 | `rapidsai/rapidsai:23.08a-cuda11.8.0-py3.10` | N/A (not required) | Failed | No benchmark artifacts | Failure: `RandomState` has no `random` (cupy API mismatch) | Code fixed (`rng.rand`) for rerun `604507` |
+| 2026-03-02 | 604507 | `rapidsai/rapidsai:23.08a-cuda11.8.0-py3.10` | Not yet run | Not yet run | Not yet run | `Priority` delay on `gh` partition | Awaiting node allocation |
 
 ## Environment Strategy (Path A)
 - Runtime: `Apptainer --nv` with pre-staged RAPIDS SIF.
