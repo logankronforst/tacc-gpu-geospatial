@@ -8,15 +8,15 @@ This workspace benchmarks geospatial query and maintenance workloads that suppor
 ## Path A: Container-First (Apptainer) Quickstart
 1. Stage RAPIDS SIF (one-time, via batch on Vista):
 ```bash
-export IMAGE_PATH=/scratch/11039/logankronforst/containers/rapids.sif
-mkdir -p /scratch/11039/logankronforst/containers jobs/logs
+export IMAGE_PATH=/scratch/11039/$USER/containers/rapids.sif
+mkdir -p /scratch/11039/$USER/containers jobs/logs
 sbatch --partition=gh-dev --export=ALL,IMAGE_PATH jobs/pull_rapids_image.sbatch
 ```
 2. Export your benchmark parameters:
 ```bash
 export SLURM_ACCOUNT=
-export IMAGE_PATH=/scratch/$USER/containers/rapids.sif
-export OUTPUT_ROOT=/scratch/$USER/tacc-gpu-geospatial
+export IMAGE_PATH=/scratch/11039/$USER/containers/rapids.sif
+export OUTPUT_ROOT=/scratch/11039/$USER/tacc-gpu-geospatial
 export POINTS=200000
 export REPEATS=3
 export SCENARIOS=temporal,bbox,maintenance,polygon_like
@@ -24,6 +24,7 @@ export BATCH_SIZE=50000
 export MAINTENANCE_WINDOW=3600
 export SLURM_PARTITION=gh
 export VALIDATE_IMAGE=1
+export USE_FAKEROOT=1
 # Optional dataset path (parquet/csv with x,y,ts columns)
 export DATA_PATH=
 ```

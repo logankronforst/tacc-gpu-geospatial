@@ -6,8 +6,8 @@ set -euo pipefail
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 export SLURM_ACCOUNT="${SLURM_ACCOUNT:-}"
-export IMAGE_PATH="${IMAGE_PATH:-/scratch/${USER}/containers/rapids.sif}"
-export OUTPUT_ROOT="${OUTPUT_ROOT:-/scratch/${USER}/tacc-gpu-geospatial}"
+export IMAGE_PATH="${IMAGE_PATH:-/scratch/11039/${USER}/containers/rapids.sif}"
+export OUTPUT_ROOT="${OUTPUT_ROOT:-/scratch/11039/${USER}/tacc-gpu-geospatial}"
 export DATA_PATH="${DATA_PATH:-}"
 export SLURM_PARTITION="${SLURM_PARTITION:-gh}"
 export POINTS="${POINTS:-200000}"
@@ -17,11 +17,12 @@ export SEED="${SEED:-42}"
 export BATCH_SIZE="${BATCH_SIZE:-50000}"
 export MAINTENANCE_WINDOW="${MAINTENANCE_WINDOW:-3600}"
 export VALIDATE_IMAGE="${VALIDATE_IMAGE:-1}"
+export USE_FAKEROOT="${USE_FAKEROOT:-1}"
 
 mkdir -p "${OUTPUT_ROOT}/runs" "${OUTPUT_ROOT}/results" "${OUTPUT_ROOT}/logs"
 
 SBATCH_ARGS=(
-  --export=ALL,SLURM_ACCOUNT,SLURM_PARTITION,IMAGE_PATH,OUTPUT_ROOT,DATA_PATH,POINTS,REPEATS,SCENARIOS,SEED,BATCH_SIZE,MAINTENANCE_WINDOW
+  --export=ALL,SLURM_ACCOUNT,SLURM_PARTITION,IMAGE_PATH,OUTPUT_ROOT,DATA_PATH,POINTS,REPEATS,SCENARIOS,SEED,BATCH_SIZE,MAINTENANCE_WINDOW,USE_FAKEROOT
 )
 
 if [[ -n "${SLURM_ACCOUNT}" ]]; then

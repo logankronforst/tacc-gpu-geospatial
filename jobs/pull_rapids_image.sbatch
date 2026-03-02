@@ -14,7 +14,7 @@ set +u
 module load tacc-apptainer/1.4.1
 set -u
 
-IMAGE_PATH="${IMAGE_PATH:-/scratch/${USER}/containers/rapids.sif}"
+IMAGE_PATH="${IMAGE_PATH:-/scratch/11039/${USER}/containers/rapids.sif}"
 FORCE_PULL="${FORCE_PULL:-0}"
 
 if [[ -f "${IMAGE_PATH}" && "${FORCE_PULL}" != "1" ]]; then
@@ -25,8 +25,12 @@ fi
 mkdir -p "$(dirname "${IMAGE_PATH}")"
 
 TAGS=(
-  "rapidsai/base:26.02-cuda12-py3.11"
-  "rapidsai/base:26.02-cuda12-py3.10"
+  "rapidsai/rapidsai:23.08a-cuda11.8.0-py3.10"
+  "rapidsai/notebooks:26.04a-cuda12-py3.12"
+  "rapidsai/notebooks:26.04a-cuda12-py3.11"
+  "rapidsai/base:26.04a-cuda12-py3.12"
+  "rapidsai/notebooks:26.02a-cuda12-py3.12"
+  "rapidsai/base:26.02a-cuda12-py3.12"
   "rapidsai/base:25.12a-cuda12-py3.11"
   "rapidsai/base:25.12a-cuda12-py3.10"
 )

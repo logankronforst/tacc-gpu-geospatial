@@ -18,8 +18,9 @@ module purge
 REPO_DIR="${SLURM_SUBMIT_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 TIMESTAMP="$(date +%Y%m%d_%H%M%S)"
 DATA_PATH="${DATA_PATH:-}"
-OUTPUT_ROOT="${OUTPUT_ROOT:-/scratch/${USER}/tacc-gpu-geospatial}"
-IMAGE_PATH="${IMAGE_PATH:-/scratch/${USER}/containers/rapids.sif}"
+OUTPUT_ROOT="${OUTPUT_ROOT:-/scratch/11039/${USER}/tacc-gpu-geospatial}"
+IMAGE_PATH="${IMAGE_PATH:-/scratch/11039/${USER}/containers/rapids.sif}"
+USE_FAKEROOT="${USE_FAKEROOT:-1}"
 RESULT_ROOT="${OUTPUT_ROOT}/results/${TIMESTAMP}"
 RUN_DIR="${OUTPUT_ROOT}/runs/${TIMESTAMP}"
 
@@ -85,7 +86,13 @@ nvidia-smi \
 GPU_MONITOR_PID=$!
 trap 'kill ${GPU_MONITOR_PID} >/dev/null 2>&1 || true' EXIT
 
-apptainer exec --nv \
+FAKEROOT_FLAG=""
+if [[ "${USE_FAKEROOT}" == "1" ]]; then
+  FAKEROOT_FLAG="--fakeroot"
+  echo "Using --fakeroot for container execution."
+fi
+
+apptainer exec ${FAKEROOT_FLAG} --nv \
   -B "${REPO_DIR}:/workspace" \
   -B "${OUTPUT_ROOT}:/output" \
   -B "${RUN_DIR}:/run" \
@@ -98,19 +105,63 @@ apptainer exec --nv \
     ls -l /opt/conda/bin 2>/dev/null | head -n 20 || true
 
     PYTHON_BIN=""
+    shopt -s nullglob
     for candidate in \
       /opt/conda/bin/python \
       /opt/conda/bin/python3 \
       /usr/bin/python3 \
       /usr/local/bin/python3 \
       /usr/bin/python \
-      /usr/local/bin/python
+      /usr/local/bin/python \
+      /bin/python3 \
+      /bin/python \
+      /usr/local/anaconda*/bin/python \
+      /usr/local/anaconda*/bin/python3 \
+      /opt/conda/envs/*/bin/python \
+      /opt/conda/envs/*/bin/python3 \
+      /usr/bin/python3.* \
+      /bin/python3.*
     do
       if [[ -x "${candidate}" ]]; then
         PYTHON_BIN="${candidate}"
         break
       fi
     done
+
+    if [[ -z "${PYTHON_BIN}" ]]; then
+      for p in $(echo "${PATH}" | tr ":" "\n"); do
+        if [[ -x "${p}/python3" ]]; then
+          PYTHON_BIN="${p}/python3"
+          break
+        fi
+        if [[ -x "${p}/python" ]]; then
+          PYTHON_BIN="${p}/python"
+          break
+        fi
+      done
+    fi
+
+    if [[ -z "${PYTHON_BIN}" ]]; then
+      echo "PATH candidates checked:"
+      for p in $(echo "${PATH}" | tr ":" "\n"); do
+        printf "%s\n" "${p}/python3" "${p}/python"
+      done
+      echo "No python executable found via PATH scan."
+      find /usr /opt /bin /home /root -maxdepth 4 -type f -name 'python*' 2>/dev/null | head -n 40 || true
+    fi
+
+    if [[ -z "${PYTHON_BIN}" ]]; then
+      for candidate in $(find / -xdev -maxdepth 6 -type f -name "python*" 2>/dev/null); do
+        if [[ -x "${candidate}" ]]; then
+          case "$(basename "${candidate}")" in
+            python|python3|python3.*|python[0-9]*)
+              PYTHON_BIN="${candidate}"
+              break
+              ;;
+          esac
+        fi
+      done
+    fi
 
     if [[ -z "${PYTHON_BIN}" ]]; then
       PYTHON_BIN="$(command -v python3 || command -v python || true)"

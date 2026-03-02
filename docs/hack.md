@@ -11,7 +11,7 @@ Reproduce and benchmark GPU-accelerated spatio-temporal query and maintenance wo
 | Cluster | `Vista` |
 | Image pull job | `602474` (`gh-dev`) |
 | SIF path | `/scratch/11039/logankronforst/containers/rapids.sif` |
-| Pulled image tag | `rapidsai/base:26.02-cuda12-py3.11` |
+| Pulled image tag | `rapidsai/rapidsai:23.08a-cuda11.8.0-py3.10` |
 | Benchmark submission at snapshot | `602502` (`gh`) |
 
 ## Environment Strategy (Path A)
@@ -30,6 +30,8 @@ Reproduce and benchmark GPU-accelerated spatio-temporal query and maintenance wo
   - `cuspatial`
   - `cupy`
   - Python 3.x compatible with selected RAPIDS build
+- Runtime note: on current cluster images, `/opt/conda` may only be accessible via `apptainer --fakeroot`.
+  Validation and benchmark jobs are configured to use `--fakeroot` by default.
 
 ## Constraints and Compatibility
 - RAPIDS build must match node CUDA driver/runtime compatibility.
@@ -81,7 +83,8 @@ sbatch --partition=gh-dev --export=ALL,IMAGE_PATH jobs/pull_rapids_image.sbatch
 
 ### 2) Validate image on GPU node (recommended)
 ```bash
-sbatch --partition=gh --export=ALL,IMAGE_PATH jobs/validate_rapids_image.sbatch
+export USE_FAKEROOT=1
+sbatch --partition=gh --export=ALL,IMAGE_PATH,USE_FAKEROOT jobs/validate_rapids_image.sbatch
 ```
 
 ### 3) Set benchmark environment
@@ -89,8 +92,8 @@ sbatch --partition=gh --export=ALL,IMAGE_PATH jobs/validate_rapids_image.sbatch
 # Optional if cluster default project is already configured:
 export SLURM_ACCOUNT=
 
-export IMAGE_PATH=/scratch/$USER/containers/rapids.sif
-export OUTPUT_ROOT=/scratch/$USER/tacc-gpu-geospatial
+export IMAGE_PATH=/scratch/11039/$USER/containers/rapids.sif
+export OUTPUT_ROOT=/scratch/11039/$USER/tacc-gpu-geospatial
 export POINTS=200000
 export REPEATS=3
 export SCENARIOS=temporal,bbox,maintenance,polygon_like
@@ -98,6 +101,7 @@ export BATCH_SIZE=50000
 export MAINTENANCE_WINDOW=3600
 export SLURM_PARTITION=gh
 export VALIDATE_IMAGE=1
+export USE_FAKEROOT=1
 
 # Optional external dataset path:
 export DATA_PATH=
