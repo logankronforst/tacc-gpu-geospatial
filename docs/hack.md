@@ -33,6 +33,12 @@ Reproduce and benchmark GPU-accelerated spatio-temporal query and maintenance wo
 - `604239` (`geo-bench`) : `PENDING (DependencyNeverSatisfied)` on `gh`
 - `604345` (`pull-rapids-sif`) : `PENDING (Resources)` on `gh-dev`
 
+## Run Log Template
+
+| Date | Job IDs | Image tag | Validation | Benchmark | Outputs produced | Queue blockers | Notes |
+|---|---|---|---|---|---|---|
+| 2026-03-02 | 604346, 604342, 604239 | `rapidsai/rapidsai:23.08a-cuda11.8.0-py3.10` | Not yet started (jobs pending) | Not started | No new files | `604346`,`604342` pending by priority; `604239` pending on dependency | `/opt/conda` accessibility workaround added (`--fakeroot`) |
+
 ## Environment Strategy (Path A)
 - Runtime: `Apptainer --nv` with pre-staged RAPIDS SIF.
 - Rationale: strongest reproducibility and lower CUDA/Python mismatch risk on shared HPC.
