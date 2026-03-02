@@ -14,6 +14,25 @@ Reproduce and benchmark GPU-accelerated spatio-temporal query and maintenance wo
 | Pulled image tag | `rapidsai/rapidsai:23.08a-cuda11.8.0-py3.10` |
 | Benchmark submission at snapshot | `602502` (`gh`) |
 
+## Status Snapshot (March 2, 2026)
+
+### Have
+- Working image candidate identified: `rapidsai/rapidsai:23.08a-cuda11.8.0-py3.10`.
+- `cuspatial` import validated in a direct image probe: `cudf=True`, `cuspatial=True` in [`jobs/logs/test-tag-604303.out`](/work/11039/logankronforst/vista/tacc-gpu-geospatial/jobs/logs/test-tag-604303.out).
+- Existing staged SIF is present at `/scratch/11039/logankronforst/containers/rapids.sif` and readable on the login filesystem.
+
+### Don’t Have
+- No successful end-to-end validation run yet under the final benchmark pipeline.
+- No benchmark results yet for this case (`benchmark_results.csv`, `summary.json`, and `gpu_metrics.csv` remain unproduced in a fresh run).
+- Prior non-fakeroot container validation failed to locate Python (`No usable python interpreter found inside container`) in [`jobs/logs/validate-rapids-image-604288.out`](/work/11039/logankforst/vista/tacc-gpu-geospatial/jobs/logs/validate-rapids-image-604288.out), which is why the pipeline now defaults to `--fakeroot`.
+- Prior quick checks also showed missing `cuspatial` with some 26.04a candidate images, which is why 23.08a is now prioritized.
+
+### Current Queue Status
+- `604346` (`pull-rapids-sif`) : `PENDING (Priority)` on `gh`
+- `604342` (`quick-rapidsui-val`) : `PENDING (Priority)` on `gh`
+- `604239` (`geo-bench`) : `PENDING (DependencyNeverSatisfied)` on `gh`
+- `604345` (`pull-rapids-sif`) : `PENDING (Resources)` on `gh-dev`
+
 ## Environment Strategy (Path A)
 - Runtime: `Apptainer --nv` with pre-staged RAPIDS SIF.
 - Rationale: strongest reproducibility and lower CUDA/Python mismatch risk on shared HPC.
