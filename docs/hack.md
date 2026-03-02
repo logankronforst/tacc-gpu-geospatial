@@ -57,6 +57,15 @@ Reproduce and benchmark GPU-accelerated spatio-temporal query and maintenance wo
 | 2026-03-02 | `604507` | Completed | Artifacts in `results/20260302_122356`, exit `0:0`, runtime `00:00:16`, node `c639-021` |
 | 2026-03-02 | `604513` | Completed | Artifacts in `results/20260302_122357`, exit `0:0`, runtime `00:00:16`, node `c640-032` |
 
+## Authoritative Results (single source of truth)
+
+| Run | Status | Artifacts | Key Summary |
+|---|---|---|---|
+| `20260302_122356` | Success | `benchmark_results.csv`, `summary.json`, `gpu_metrics.csv` | `results_count=36`, `rows_out=722,815`, `elapsed_ms_mean=2.444148461`, `gpu_util_post_mean=0.75` |
+| `20260302_122357` | Success | `benchmark_results.csv`, `summary.json`, `gpu_metrics.csv` | `results_count=36`, `rows_out=722,815`, `elapsed_ms_mean=2.5244453715`, `gpu_util_post_mean=0.8611111111` |
+
+Canonical result reference: [results_summary.md](results_summary.md)
+
 ## Environment Strategy (Path A)
 - Runtime: `Apptainer --nv` with pre-staged RAPIDS SIF.
 - Rationale: reproducibility and lower CUDA/Python mismatch risk on shared HPC.
