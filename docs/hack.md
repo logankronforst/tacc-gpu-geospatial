@@ -50,21 +50,12 @@ Reproduce and benchmark GPU-accelerated spatio-temporal query and maintenance wo
 
 ## Run Log
 
-| Date | Job IDs | Image tag | Validation | Benchmark | Outputs produced | Queue blockers | Notes |
-|---|---|---|---|---|---|---|
-| 2026-03-02 | 604458 | `rapidsai/rapidsai:23.08a-cuda11.8.0-py3.10` | Passed | Not benchmarked in this job | `RAPIDS` validated and ready for benchmark chain | none | Verified python/cudf/cuspatial import in Slurm context |
-| 2026-03-02 | 604471 | `rapidsai/rapidsai:23.08a-cuda11.8.0-py3.10` | N/A | Failed | No outputs | `RandomState.random` incompatibility in cupy | Fixed in `src/spatial_benchmark.py` (use `rng.rand`) |
-| 2026-03-02 | 604507 | `rapidsai/rapidsai:23.08a-cuda11.8.0-py3.10` | Not required | Completed | `benchmark_results.csv`, `summary.json`, `gpu_metrics.csv` in `results/20260302_122356` | none | Exit `0:0`, elapsed `00:00:16`, node `c639-021` |
-| 2026-03-02 | 604513 | `rapidsai/rapidsai:23.08a-cuda11.8.0-py3.10` | Not required | Completed | `benchmark_results.csv`, `summary.json`, `gpu_metrics.csv` in `results/20260302_122357` | none | Exit `0:0`, elapsed `00:00:16`, node `c640-032` |
-
-## Authoritative Results (single source of truth)
-
-| Run | Status | Run artifacts | Summary |
+| Date | Jobs | Status | Notes |
 |---|---|---|---|
-| `20260302_122356` | Success | `benchmark_results.csv`, `summary.json`, `gpu_metrics.csv` | 36 rows (15 temporal, 9 bbox_full_time, 3 maintenance, 9 polygon_like), `rows_out=722,815` |
-| `20260302_122357` | Success | `benchmark_results.csv`, `summary.json`, `gpu_metrics.csv` | 36 rows (15 temporal, 9 bbox_full_time, 3 maintenance, 9 polygon_like), `rows_out=722,815` |
-
-Detailed canonical run summary: [results_summary.md](results_summary.md)
+| 2026-03-02 | `604458` | Validation passed | `validate-rapids-image` job confirmed `python 3.10.12`, `cudf 23.08.00`, `cuspatial 23.08.00` |
+| 2026-03-02 | `604471` | Failed (RNG API) | `RandomState.random` is not available in this cupy version; fixed in source (`rng.rand`) |
+| 2026-03-02 | `604507` | Completed | Artifacts in `results/20260302_122356`, exit `0:0`, runtime `00:00:16`, node `c639-021` |
+| 2026-03-02 | `604513` | Completed | Artifacts in `results/20260302_122357`, exit `0:0`, runtime `00:00:16`, node `c640-032` |
 
 ## Environment Strategy (Path A)
 - Runtime: `Apptainer --nv` with pre-staged RAPIDS SIF.
