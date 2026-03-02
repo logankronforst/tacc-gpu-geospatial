@@ -194,6 +194,18 @@ bash jobs/submit_spatial_benchmark.sh
 - `$OUTPUT_ROOT/results/<timestamp>/summary.json`
 - `$OUTPUT_ROOT/results/<timestamp>/gpu_metrics.csv`
 
+### 6) Validate output quality
+```bash
+python3 scripts/validate_benchmark_results.py /scratch/11039/logankronforst/tacc-gpu-geospatial/results/<timestamp>
+```
+
+The validator checks:
+- presence of all required artifacts
+- expected CSV schema and numeric sanity
+- summary consistency (`results_count`, `rows_out`, `elapsed_ms_mean`)
+- required scenario coverage
+- GPU metrics parseability
+
 ## Validation Checklist
 - GPU is visible in job logs (`nvidia-smi`).
 - RAPIDS imports succeed (`cudf`, `cuspatial`) in logs.
@@ -201,6 +213,7 @@ bash jobs/submit_spatial_benchmark.sh
   - `benchmark_results.csv`
   - `summary.json`
   - `gpu_metrics.csv`
+- Post-run validator passes (`scripts/validate_benchmark_results.py`).
 
 ## Job Patch Checklist (When Retuning Runs)
 - Confirm `SLURM_PARTITION` and optional `SLURM_ACCOUNT` are correct for current allocation.

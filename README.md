@@ -43,6 +43,7 @@ This now submits `jobs/validate_rapids_image.sbatch` first and runs the benchmar
 - `docs/hack.md`: benchmark runbook, dependency and constraint notes, scenario definitions.
 - `docs/results_summary.md`: experiment logging template.
 - `docs/notes.md`: concise runtime notes scaffold.
+- `scripts/validate_benchmark_results.py`: authoritative post-run validator for benchmark output artifacts.
 
 ## Handoff
 See `AGENTS.md` and `skills/tacc-agent-handoff/SKILL.md`.
